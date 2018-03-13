@@ -3,13 +3,13 @@
 ## Load packages
 library(tidyverse) 
 library(randomForest)
-
+library(stringr)
 
 ###########################################
 ########################################### Import Data tables provided by Kaggle website
 
 ## Set working directory where files are stored
-setwd("2018 NCAA Tournament Data")
+setwd("C:/Users/dmiel/OneDrive/Documents/Kaggle/2018 NCAA Tournament Data")
 
 
 ## Read files into R
@@ -24,6 +24,9 @@ tourneySeeds <- read.csv("NCAATourneySeeds.csv", header = TRUE, stringsAsFactors
 tourneySlots <- read.csv("NCAATourneySlots.csv", header = TRUE, stringsAsFactors = FALSE)
 regSeasonDetail <- read.csv("RegularSeasonDetailedResults.csv", header = TRUE, stringsAsFactors = FALSE)
 
+
+
+regSeason %>% filter(WTeamID == 1388 & Season == 2018)
 
 
 ###########################################
@@ -75,7 +78,7 @@ gamesLost$Team <- as.integer(gamesLost$Team)
 
 
 
-names(tourneySeeds)
+
 ## Join games lost and games one into one table
 tourneySeeds <- tourneySeeds  %>% 
   inner_join(gamesWon, by=c("TeamID" = "Team", "Season")) %>% 
@@ -108,7 +111,7 @@ wins <- cbind(Season = regSeasonDetail$Season,
               TeamFGM3 = regSeasonDetail$WFGM3,
               TeamFGA3 = regSeasonDetail$WFGA3,
               TeamFTM = regSeasonDetail$WFTM,
-              TeamFTA = regSeasonDetail$WFT,
+              TeamFTA = regSeasonDetail$WFTA,
               TeamOR = regSeasonDetail$WOR,
               TeamDR = regSeasonDetail$WDR,
               TeamAst = regSeasonDetail$WAst,
@@ -138,7 +141,7 @@ losses <- cbind(Season = regSeasonDetail$Season,
                 Team = regSeasonDetail$LTeamID,
                 Opponent = regSeasonDetail$WTeamID,
                 DayNum = regSeasonDetail$DayNum, 
-                Location = ifelse(test = regSeasonDetail$Wloc == "H", 
+                Location = ifelse(test = regSeasonDetail$WLoc == "H", 
                                   yes = "A", 
                                   no = "H"),
                 Result = as.numeric(0), 
@@ -178,6 +181,8 @@ losses <- as.data.frame(losses)
 
 wins <- as.data.frame(wins)
 
+
+names(losses) == names(wins)
 ## Union wins and losses into one dataframe
 allGames <- as.data.frame(rbind(wins, losses),stringsAsFactors = FALSE)
 
@@ -192,7 +197,7 @@ allGames <- as.data.frame(apply(X = allGames,
 
 
 
-sum(allGames$Result)
+table(allGames$Season)
 
 ## Replace location and result variables with character replacements (from copy)
 allGames$Location = allGamesCopy$Location
@@ -203,6 +208,8 @@ rm(allGamesCopy)
 
 ## Sort Column by season, team, and daynum
 allGames <- allGames[with(allGames, order(Season, Team, DayNum)), ]
+
+
 
 
 ## Split dataframe into lists by season & team
@@ -296,6 +303,10 @@ OffensiveReboundsAvg$Season <- as.integer(as.character(substr(x = rownames(Offen
 OffensiveReboundsAvg$Team <- as.integer(as.character(substr(x = rownames(OffensiveReboundsAvg), start = 6, stop = 9)))
 
 
+# table(tourneySeeds$Season)
+# 
+# tourneySeeds %>% filter(TeamID == 1388) & Season == 2018)
+# teams %>% filter(TeamID == 1388)
 
 
 ## Join statistics to tourney seeds table
@@ -321,19 +332,22 @@ AllTeamStats$CloseGamesPercent <- AllTeamStats$NumCloseGames/AllTeamStats$GamesC
 ################################################################ 
 ################################################################ 
 ## Remove unneccessary Data
-rm(tourneySeeds, teams,regSeason, seasons, tourneyRes, tourneyResDetail, tourneySlots, 
-   regSeasonDetail, games, teamA, teamB, outcome, gamesWon, gamesLost, wins, 
-   losses, allGames, LastSix, TeamPointsAvg, OppPointsAvg, TeamAvgFgPercentage, 
-   OppAvgFgPercentage, TeamAvgTODiff, GamesCount, CloseGamesCount, FreeThrowsPercent, OffensiveReboundsAvg)
+# rm(tourneySeeds, teams,regSeason, seasons, tourneyRes, tourneyResDetail, tourneySlots, 
+#    regSeasonDetail, games, teamA, teamB, outcome, gamesWon, gamesLost, wins, 
+#    losses, allGames, LastSix, TeamPointsAvg, OppPointsAvg, TeamAvgFgPercentage, 
+#    OppAvgFgPercentage, TeamAvgTODiff, GamesCount, CloseGamesCount, FreeThrowsPercent, OffensiveReboundsAvg)
 
 ################################################################ 
 ################################################################ 
 ################################################################ 
 
 ## Create a table with TeamA names
-AllTeamStatsA <- AllTeamStats
-names(AllTeamStatsA) <- c("Season", "SeedA", "Team", "WinsA", "LossesA", "SeedValueA", 
-                          "TotalWinPctA", "Team_NameA", "WinsLastSixA", "TeamPointsAvgA", 
+
+
+names(AllTeamStats)
+names(AllTeamStatsA) <- c("Season", "SeedA", "TeamA", "WinsA", "LossesA", "SeedValueA", 
+                          "TotalWinPctA", "Team_NameA", "FirstD1SeasonA", "LastD1SeasonA", 
+                          "WinsLastSixA", "TeamPointsAvgA", 
                           "OppPointsAvgA", "TeamAvgFgPercentageA","OppAvgFgPercentageA", 
                           "TeamAvgTODiffA","GamesCountA", "CloseGamesCountA", 
                           "CloseGamesPercentA","FreeThrowsPercentA", "OffensiveReboundsAvgA")
@@ -341,8 +355,9 @@ names(AllTeamStatsA) <- c("Season", "SeedA", "Team", "WinsA", "LossesA", "SeedVa
 
 ## Create a table with TeamB names
 AllTeamStatsB <- AllTeamStats
-names(AllTeamStatsB) <- c("Season", "SeedB", "Team", "WinsB", "LossesB", "SeedValueB", 
-                          "TotalWinPctB", "Team_NameB", "WinsLastSixB", "TeamPointsAvgB", 
+names(AllTeamStatsB) <- c("Season", "SeedB", "TeamB", "WinsB", "LossesB", "SeedValueB", 
+                          "TotalWinPctB", "Team_NameB", "FirstD1SeasonB", "LastD1SeasonB", 
+                          "WinsLastSixB", "TeamPointsAvgB", 
                           "OppPointsAvgB", "TeamAvgFgPercentageB", "OppAvgFgPercentageB", 
                           "TeamAvgTODiffB", "GamesCountB", "CloseGamesCountB", 
                           "CloseGamesPercentB","FreeThrowsPercentB", "OffensiveReboundsAvgB")
@@ -354,29 +369,44 @@ names(AllTeamStatsB) <- c("Season", "SeedB", "Team", "WinsB", "LossesB", "SeedVa
 ################################################################ 
 ## STOPPED UPDATING HERE
 
+trainData$TeamA <- as.integer(trainData$TeamA)
+trainData$TeamB <- as.integer(trainData$TeamB)
+
+
+str(AllTeamStatsA)
+AllTeamStatsA$TeamA <- as.integer(AllTeamStatsA$TeamA)
+AllTeamStatsA$Season <- as.integer(AllTeamStatsA$Season)
+
+
+AllTeamStatsB$TeamB <- as.integer(AllTeamStatsB$TeamB)
+AllTeamStatsB$Season <- as.integer(AllTeamStatsB$Season)
+
+
+
+
 ## Join trainData to table with TeamA data and table with TeamB data
-trainDataFull <- trainData %>% inner_join(AllTeamStatsA,by = c("TeamA" = "Team", "Season"))  %>% 
-  inner_join(AllTeamStatsB,by = c("TeamB" = "Team", "Season"))
+trainDataFull <- trainData %>% 
+  inner_join(AllTeamStatsA,by = c("TeamA" = "TeamA", "Season"))  %>% 
+  inner_join(AllTeamStatsB,by = c("TeamB" = "TeamB", "Season"))
 
 trainDataFull$Win <- as.factor(trainDataFull$Win)
 
 #tourneySeeds <- tourneySeeds[,c(1:3,8,4:7,9:16)]
 
-
-
+unique(trainDataFull$Season)
 
 
 #########################################
 #########################################
 ######################################### Create first model for predictions
 
-trainDataSubset <- trainDataFull[trainDataFull$Season <= 2011,]
-testDataSubset <- trainDataFull[trainDataFull$Season >2011,]
+trainDataSubset <- trainDataFull[trainDataFull$Season <= 2014,]
+testDataSubset <- trainDataFull[trainDataFull$Season >2014,]
 
 ## First attempt: create a random forest decision tree model to predict game outcomes
 train_randomForest <- randomForest(formula = Win ~ 
                                      TotalWinPctA + TotalWinPctB + 
-                                     #SeedValueA + SeedValueB + 
+                                     SeedValueA + SeedValueB + 
                                      WinsLastSixA + WinsLastSixB +
                                      TeamPointsAvgA + TeamPointsAvgB + 
                                      OppPointsAvgA + OppPointsAvgB + 
@@ -386,15 +416,18 @@ train_randomForest <- randomForest(formula = Win ~
                                      CloseGamesPercentA + CloseGamesPercentB + 
                                      FreeThrowsPercentA + FreeThrowsPercentB +
                                      OffensiveReboundsAvgA + OffensiveReboundsAvgA,
-                                   data = trainDataSubset, ntree = 500)
+                                   data = trainDataFull, 
+                                   ntree = 500)
 
 ## View summary of random forest model
 train_randomForest
 
 
 ## Use model to predict on test data
-testDataSubset$Predprob <- predict(object = train_randomForest,newdata = testDataSubset,type = "prob")[,2]
-testDataSubset$Predwin <- predict(object = train_randomForest,newdata = testDataSubset,type = "response")
+testDataSubset$Predprob <- predict(object = train_randomForest,
+                                   newdata = testDataSubset,type = "prob")[,2]
+testDataSubset$Predwin <- predict(object = train_randomForest,
+                                  newdata = testDataSubset,type = "response")
 
 
 
@@ -404,32 +437,46 @@ View(view_testDataSubset)
 
 
 ## View Accuracy Table
-table(actual = view_testDataSubset$Win, pred = view_testDataSubset$Predwin)
+table(actual = view_testDataSubset$Win, 
+      pred = view_testDataSubset$Predwin)
 
 
 ## Create submission file
-sampleSubmission <- read.csv("SampleSubmission.csv", header = TRUE, stringsAsFactors = FALSE)
+sampleSubmission <- read.csv("SampleSubmissionStage2.csv", header = TRUE, stringsAsFactors = FALSE)
 
-library(stringr)
-sampleSubmission$Season <- as.integer(substring(text = sampleSubmission$Id,first = 0,last = 4))
-sampleSubmission$TeamA <- as.integer(substring(text = sampleSubmission$Id,first = 6,last = 9))
-sampleSubmission$TeamB <- as.integer(substring(text = sampleSubmission$Id,first = 11,last = 14))
+
+sampleSubmission$Season <- as.integer(substring(text = sampleSubmission$ID,first = 0,last = 4))
+sampleSubmission$TeamA <- as.integer(substring(text = sampleSubmission$ID,first = 6,last = 9))
+sampleSubmission$TeamB <- as.integer(substring(text = sampleSubmission$ID,first = 11,last = 14))
+
 
 
 sampleSubmission <- sampleSubmission %>% 
-  inner_join(AllTeamStatsA,by = c("TeamA" = "Team", "Season"))  %>% 
-  inner_join(AllTeamStatsB,by = c("TeamB" = "Team", "Season")) 
+ left_join(AllTeamStatsA,by = c("TeamA", "Season"))  %>% 
+  inner_join(AllTeamStatsB,by = c("TeamB", "Season")) 
 
 
 ## Add predicted values to submission file
-sampleSubmission$Pred <- predict(train_randomForest,newdata = sampleSubmission,type = "prob")[,2]
+sampleSubmission$Pred <- predict(train_randomForest,
+                                 newdata = sampleSubmission,
+                                 type = "prob")[,2]
 
-Submission <- data.frame(Id = sampleSubmission$Id, 
-                         PRed = sampleSubmission$Pred,
-                         seeda = sampleSubmission$SeedValueA,
-                         seedb = sampleSubmission$SeedValueB)
+1-0.368
 
-write.csv(x = Submission,file = "Submission1.csv")
+sampleSubmission %>% filter(Team_NameA =="Purdue"& Team_NameB =="Villanova")
+
+Submission <- data.frame(id = sampleSubmission$ID, 
+                         pred = sampleSubmission$Pred)
+                         # ,
+                         # teama = sampleSubmission$Team_NameA,
+                         # teamb = sampleSubmission$Team_NameB)
+                         # ,
+                         # seeda = sampleSubmission$SeedValueA,
+                         # seedb = sampleSubmission$SeedValueB)
+
+write.csv(x = Submission, 
+          file = "sample_submission7.csv",
+          row.names = FALSE)
 
 
 ##############################################################
